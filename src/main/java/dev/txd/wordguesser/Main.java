@@ -1,7 +1,7 @@
-package dev.txd;
+package dev.txd.wordguesser;
 
 public class Main {
     public static void main(String[] args) {
-        System.out.println("Hello world!");
+
     }
 }
