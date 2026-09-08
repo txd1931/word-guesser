@@ -6,7 +6,6 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
-import java.nio.file.Paths;
 import java.text.Normalizer;
 import java.util.HashSet;
 import java.util.Set;
@@ -35,7 +34,7 @@ public class Main {
             return;
         } 
         try {
-            words = fetchDictionary(DICTIONARY, chosenWordLength);
+            words = fetchDictionary(DICTIONARY, chosenWordLength, out);
         } catch (IOException e) {
             System.err.println("Could not load internal dictionary: " + e.getMessage());
             System.exit(1);    
@@ -45,31 +44,38 @@ public class Main {
     }
 
     private static void gameLoop(PrintStream out) {
-        for (String word : words) {
-            out.println(word);
-        }
-        out.println(words.size());
+        
+    }
+
+    private static void selectAnswer() {
+
     }
 
     private static String sanitizeWord(String word) {
         if (word == null) return "";
         String normalizedWord = Normalizer.normalize(word.trim(), Normalizer.Form.NFD).replaceAll("\\p{M}", "").toUpperCase();
-        return normalizedWord;
-        
+        return normalizedWord;        
     }
 
-    private static Set<String> fetchDictionary(String source, int wordLenth) throws IOException {
+    private static Set<String> fetchDictionary(String source, int wordLenth, PrintStream out) throws IOException {
         InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(source);
         if (inputStream == null) throw new IOException("InputStream could not be instantiated");
-        
+
+        ProgressBar bar = new ProgressBar.Builder()
+            .label("Fetching dictionary...")
+            .width(50)
+            .totalProgress(5000)
+            .out(out)
+            .build();
+        System.out.print("\033[s");
         Set<String> dictionary = new HashSet<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         String line;
         while ((line = reader.readLine()) != null) {
             String cleanWord = sanitizeWord(line);
-            System.out.println(cleanWord);
             if (cleanWord.isBlank() || !cleanWord.matches("[A-Z]+") || cleanWord.length() != chosenWordLength) continue;
             dictionary.add(cleanWord);
+            bar.advance();
         }
         return dictionary;
     }
