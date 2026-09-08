@@ -29,7 +29,9 @@ public class Main {
     public static void main(String[] args) {
         PrintStream out = System.out;
         if (args.length == 1) {
-            if (args[0] == "help" || args[0] == "-help") outputHelpMessage(HELP, out);
+            try { 
+                if (args[0].toLowerCase().equals("-help")) outputHelpMessage(HELP, out);
+            } catch (IOException e) { out.println("No help message found");}
             return;
         } 
         try {
@@ -56,12 +58,12 @@ public class Main {
         
     }
 
-    private static Set<String> fetchDictionary(String source, int wordLenth) throws IOException{
-        InputStream is = Main.class.getClassLoader().getResourceAsStream(source);
-        if (is == null) throw new IOException("InputStream could not be instantiated");
+    private static Set<String> fetchDictionary(String source, int wordLenth) throws IOException {
+        InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(source);
+        if (inputStream == null) throw new IOException("InputStream could not be instantiated");
         
         Set<String> dictionary = new HashSet<>();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         String line;
         while ((line = reader.readLine()) != null) {
             String cleanWord = sanitizeWord(line);
@@ -72,7 +74,9 @@ public class Main {
         return dictionary;
     }
 
-    private static void outputHelpMessage(String source, PrintStream out) {
-
+    private static void outputHelpMessage(String source, PrintStream out) throws IOException {
+        InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(source);
+        if (inputStream == null) throw new IOException("InputStream could not be instantiated");
+        out.println(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
     }
 }
