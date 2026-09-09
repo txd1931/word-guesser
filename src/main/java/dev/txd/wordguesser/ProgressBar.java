@@ -4,6 +4,10 @@ import java.io.PrintStream;
 
 public class ProgressBar {
     
+
+    public static final String ANSI_LIGHT_BLUE = "\u001B[94m";
+    private static final String ANSI_RESET = "\u001B[0m";
+
     private PrintStream out;
     private String label;
     private int width;
@@ -13,11 +17,11 @@ public class ProgressBar {
     private char emptyChar;
     private boolean hasBorders;
 
-    private boolean displayPercentage;
+    private boolean displayProgress;
     private int line;
     private int column;
-    private int totalProgress;
-    private int currentProgress;
+    private int totalValue;
+    private int value;
     private boolean completed;
     private Runnable onComplete;
 
@@ -30,10 +34,10 @@ public class ProgressBar {
         this.fillChar = builder.fillChar;
         this.emptyChar = builder.emptyChar;
         this.hasBorders = builder.hasBorders;
-        this.displayPercentage = builder.displayPercentage;
+        this.displayProgress = builder.displayProgress;
         this.line = builder.line;
         this.column = builder.column;
-        this.totalProgress = builder.totalProgress;
+        this.totalValue = builder.totalValue;
         this.onComplete = builder.onComplete;
     }
 
@@ -42,44 +46,55 @@ public class ProgressBar {
     }
 
     public void advanceBy(int ammount) {
-        setProgress(currentProgress + ammount);
+        setValue(value + ammount);
     }
 
-    public void setProgress(int progress) {
-        currentProgress = progress;
+    public void setValue(int value) {
+        this.value = value;
 
         displayBar();
-        if (currentProgress >= totalProgress) {
-            currentProgress = totalProgress;
+        if (value >= totalValue) {
+            value = totalValue;
             completed = true;
             if (onComplete != null) onComplete.run();
         }
     }
 
-    public int getTotalWidth() {
-        return label.length() + 1 + (hasBorders ? 2 : 0) + width + (displayPercentage ? 4 : 0);
+    public int getValue() {
+        return value;
     }
 
-    public float getProgresFloat() {
-        return currentProgress / totalProgress;
+    public int getTotalWidth() {
+        return label.length() + 1 + (hasBorders ? 2 : 0) + width + (displayProgress ? 4 : 0);
+    }
+
+    public int getWitdth() {
+        return width;
+    }
+
+    public float getProgress() {
+        return (float)value / (float)totalValue;
     }
 
     private void displayBar() {
         if (!visible) return;
-        StringBuilder bar = new StringBuilder("\033[5" + line + ";" + column);
+        StringBuilder bar = new StringBuilder("\033[" + line + ";" + column + "H");
         if (!label.isBlank()) bar.append(label + " ");
+        float progress = getProgress();
+        if (progress == 1) bar.append(ANSI_LIGHT_BLUE);
         if (hasBorders) bar.append("[");
-        float progress = getProgresFloat();
         bar.append(String.valueOf(fillChar).repeat((int)(progress * width)));
         bar.append(String.valueOf(emptyChar).repeat(width - (int)(progress * width)));
         if (hasBorders) bar.append("]");
-        if (displayPercentage) {
+        if (progress == 1) bar.append(ANSI_RESET);
+        if (displayProgress) {
             StringBuilder percentageText = new StringBuilder(String.valueOf((int)(progress * 100)));
             percentageText.insert(0, " ".repeat(3 - percentageText.length()));
             
             bar.append(" " + percentageText + "%");
         }
-        out.print("\033[u");
+        bar.append("\n");
+        //out.print("\033[u");
         out.print(bar);
     }
 
@@ -94,10 +109,10 @@ public class ProgressBar {
         private char emptyChar = '░';
         private boolean hasBorders = true;
 
-        private boolean displayPercentage = true;
+        private boolean displayProgress = true;
         private int line = 0;
         private int column = 0;
-        private int totalProgress = 100;
+        private int totalValue = 100;
         private Runnable onComplete = null;
 
         public Builder() {
@@ -139,8 +154,8 @@ public class ProgressBar {
             return this;
         } 
 
-        public Builder displayPercentage(boolean displayPercentage) {
-            this.displayPercentage = displayPercentage;
+        public Builder displayProgress(boolean displayProgress) {
+            this.displayProgress = displayProgress;
             return this;
         }
 
@@ -154,8 +169,8 @@ public class ProgressBar {
             return this;
         }
 
-        public Builder totalProgress(int totalProgress) {
-            this.totalProgress = totalProgress;
+        public Builder totalValue(int totalValue) {
+            this.totalValue = totalValue;
             return this;
         }
 

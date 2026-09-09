@@ -7,7 +7,12 @@ import java.io.InputStreamReader;
 import java.io.PrintStream;
 import java.nio.charset.StandardCharsets;
 import java.text.Normalizer;
+import java.time.Duration;
+import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.List;
+import java.util.Random;
+import java.util.Scanner;
 import java.util.Set;
 
 public class Main {
@@ -21,12 +26,16 @@ public class Main {
     private static final String RED = "\u001B[31m";
     
     private static String[] attempts = null;
+    private static int attemptCount = 0;
+    private static long startTime = 0;
     private static String answer = "";
     private static int chosenWordLength = 5;
+    private static long seed;
     
     private static Set<String> words = new HashSet<>();
     public static void main(String[] args) {
         PrintStream out = System.out;
+        clearOutputStream(out);
         if (args.length == 1) {
             try { 
                 if (args[0].toLowerCase().equals("-help")) outputHelpMessage(HELP, out);
@@ -40,15 +49,63 @@ public class Main {
             System.exit(1);    
         }
 
+
+        attempts = new String[6];
+        seed = new Random().nextLong(Long.MAX_VALUE);
+        selectAnswer(seed);
+
         gameLoop(out);
+        ending(out);
     }
 
     private static void gameLoop(PrintStream out) {
-        
+        startTime = System.currentTimeMillis();
+        String attempt = "";
+        boolean validAttempt = false;
+        Scanner scanner = new Scanner(System.in);
+        while (attempt != answer && attemptCount < attempts.length) {
+            while (!validAttempt && !attempt.equals("-")) {
+                clearOutputStream(out);
+                displayGame(out);
+                attempt = scanner.nextLine();
+                validAttempt = validateAsAttempt(attempt);
+            }
+            attempts[attemptCount] = attempt;
+            attemptCount++;
+        }
+        scanner.close();
     }
 
-    private static void selectAnswer() {
+    private static void ending(PrintStream out) {
+        out.println("Answer: " + answer);
+        out.println("seed: " + seed);
+        Duration duration = Duration.ofMillis(System.currentTimeMillis() - startTime);
+        long hours = duration.toHours();
+        long minutes = duration.toMinutesPart();
+        long seconds = duration.toSecondsPart();
+        out.println("Time: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
+    }
 
+    private static void displayGame(PrintStream out) {
+        for (int i = 0; i < attempts.length; i++) {
+            for (int j = 0; j < chosenWordLength; j++) {
+                if (attempts[i] != null) { 
+                    out.print(attempts[i].charAt(j));
+                } else {
+                    out.print(GRAY_BG + " " + COLOR_RESET);
+                }
+            }
+            out.print("\n");
+        }
+    }
+
+    private static boolean validateAsAttempt(String attempt) {
+        return true;
+    }
+
+    private static void selectAnswer(long seed) {
+        List<String> wordList = new ArrayList<>(words);
+        answer = wordList.get(new Random(seed).nextInt(wordList.size()));
     }
 
     private static String sanitizeWord(String word) {
@@ -62,21 +119,27 @@ public class Main {
         if (inputStream == null) throw new IOException("InputStream could not be instantiated");
 
         ProgressBar bar = new ProgressBar.Builder()
-            .label("Fetching dictionary...")
+            .label("Fetching dictionary:")
             .width(50)
-            .totalProgress(5000)
+            .hasBorders(false)
+            .totalValue(inputStream.available())
             .out(out)
             .build();
-        System.out.print("\033[s");
+
         Set<String> dictionary = new HashSet<>();
         BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8));
         String line;
+        
+        System.out.print("\033[s");
         while ((line = reader.readLine()) != null) {
+            bar.advanceBy(line.getBytes(StandardCharsets.UTF_8).length + 1);
             String cleanWord = sanitizeWord(line);
             if (cleanWord.isBlank() || !cleanWord.matches("[A-Z]+") || cleanWord.length() != chosenWordLength) continue;
             dictionary.add(cleanWord);
-            bar.advance();
         }
+        try { Thread.sleep(1000);
+        } catch (InterruptedException e) { e.printStackTrace(); }
+        clearOutputStream(out);
         return dictionary;
     }
 
@@ -84,5 +147,10 @@ public class Main {
         InputStream inputStream = Main.class.getClassLoader().getResourceAsStream(source);
         if (inputStream == null) throw new IOException("InputStream could not be instantiated");
         out.println(new String(inputStream.readAllBytes(), StandardCharsets.UTF_8));
+    }
+
+    private static void clearOutputStream(PrintStream out) {
+        out.print("\033[H\033[2J");
+        out.flush();    
     }
 }
