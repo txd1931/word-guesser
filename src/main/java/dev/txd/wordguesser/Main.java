@@ -21,10 +21,7 @@ public class Main {
 
     private static final String COLOR_RESET = "\u001B[0m";
     private static final String UNDERLINE = "\u001B[4m";
-    private static final String BOLD = "\u001B[1m";
     private static final String DARK_GRAY = "\u001B[90m";
-    private static final String GREEN = "\u001B[92m";
-    private static final String RED = "\u001B[31m";
     
     private static String[] attempts = null;
     private static int attemptCount = 0;
@@ -117,7 +114,6 @@ public class Main {
     private static String getLetterColor(char letter, int position, String answer) {
         final String GREEN_BG = "\u001B[42m\u001B[30m";
         final String YELLOW_BG = "\u001B[43m\u001B[30m";
-        final String DARK_GRAY_BG = "\u001B[90m";
 
         if (letter == answer.charAt(position)) return GREEN_BG;
         if (answer.contains(String.valueOf(letter))) return YELLOW_BG;

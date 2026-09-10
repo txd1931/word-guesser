@@ -1,0 +1,6 @@
+projectKey=word-guesser
+serverUrl=http://localhost:9000
+serverVersion=26.9.0.129388
+dashboardUrl=http://localhost:9000/dashboard?id=word-guesser
+ceTaskId=4767e9e3-b055-4846-bedf-26f083acf25b
+ceTaskUrl=http://localhost:9000/api/ce/task?id=4767e9e3-b055-4846-bedf-26f083acf25b
