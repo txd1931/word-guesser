@@ -20,9 +20,10 @@ public class Main {
     private static final String HELP = "help.txt";
 
     private static final String COLOR_RESET = "\u001B[0m";
-    private static final String GREEN_BG = "\u001B[42m\u001B[30m";
-    private static final String YELLOW_BG = "\u001B[43m\u001B[30m";
-    private static final String GRAY_BG = "\u001B[100m\u001B[37m";
+    private static final String UNDERLINE = "\u001B[4m";
+    private static final String BOLD = "\u001B[1m";
+    private static final String DARK_GRAY = "\u001B[90m";
+    private static final String GREEN = "\u001B[92m";
     private static final String RED = "\u001B[31m";
     
     private static String[] attempts = null;
@@ -32,9 +33,9 @@ public class Main {
     private static int chosenWordLength = 5;
     private static long seed;
     
-    private static Set<String> words = new HashSet<>();
     public static void main(String[] args) {
         PrintStream out = System.out;
+        Set<String> words = new HashSet<>();
         clearOutputStream(out);
         if (args.length == 1) {
             try { 
@@ -50,62 +51,86 @@ public class Main {
         }
 
 
-        attempts = new String[6];
-        seed = new Random().nextLong(Long.MAX_VALUE);
-        selectAnswer(seed);
+        attempts = new String[20];
+        seed = new Random().nextLong(Long.MIN_VALUE, Long.MAX_VALUE);
+        //seed = 1;
+        answer = selectAnswer(seed, words);
 
-        gameLoop(out);
+        gameLoop(out, words);
         ending(out);
     }
 
-    private static void gameLoop(PrintStream out) {
+    private static void gameLoop(PrintStream out, Set<String> words) {
         startTime = System.currentTimeMillis();
         String attempt = "";
-        boolean validAttempt = false;
         Scanner scanner = new Scanner(System.in);
-        while (attempt != answer && attemptCount < attempts.length) {
-            while (!validAttempt && !attempt.equals("-")) {
+        while (!attempt.equals(answer) && attemptCount < attempts.length) {
+            boolean validAttempt = false;
+            while (!validAttempt && !attempt.contains(" ")) {
                 clearOutputStream(out);
-                displayGame(out);
-                attempt = scanner.nextLine();
-                validAttempt = validateAsAttempt(attempt);
+                displayGame(out, words);
+                attempt = scanner.nextLine().toUpperCase();
+                validAttempt = validateAsAttempt(attempt, words);
+            }
+            if (!validAttempt) {
+                break;   
             }
             attempts[attemptCount] = attempt;
             attemptCount++;
         }
+        clearOutputStream(out);
+        displayGame(out, words);
         scanner.close();
     }
 
     private static void ending(PrintStream out) {
         out.println("Answer: " + answer);
-        out.println("seed: " + seed);
+        out.println("Seed: " + seed);
+        out.println("Guesses: " + attemptCount);
         Duration duration = Duration.ofMillis(System.currentTimeMillis() - startTime);
         long hours = duration.toHours();
         long minutes = duration.toMinutesPart();
         long seconds = duration.toSecondsPart();
         out.println("Time: " + String.format("%02d:%02d:%02d", hours, minutes, seconds));
+        out.println("\n");
     }
 
-    private static void displayGame(PrintStream out) {
+    private static void displayGame(PrintStream out, Set<String> words) {
+        char letter = 0;
         for (int i = 0; i < attempts.length; i++) {
             for (int j = 0; j < chosenWordLength; j++) {
+                out.print(COLOR_RESET + " " + UNDERLINE);
                 if (attempts[i] != null) { 
-                    out.print(attempts[i].charAt(j));
+                    letter = attempts[i].charAt(j);
+
+                    out.print(getLetterColor(letter, j, answer));
+
+                    out.print(letter + COLOR_RESET);
                 } else {
-                    out.print(GRAY_BG + " " + COLOR_RESET);
+                    out.print(DARK_GRAY + " " + COLOR_RESET);
                 }
             }
-            out.print("\n");
+            out.print("\n\n");
         }
     }
 
-    private static boolean validateAsAttempt(String attempt) {
-        return true;
+    private static String getLetterColor(char letter, int position, String answer) {
+        final String GREEN_BG = "\u001B[42m\u001B[30m";
+        final String YELLOW_BG = "\u001B[43m\u001B[30m";
+        final String DARK_GRAY_BG = "\u001B[90m";
+
+        if (letter == answer.charAt(position)) return GREEN_BG;
+        if (answer.contains(String.valueOf(letter))) return YELLOW_BG;
+        return "";
     }
 
-    private static void selectAnswer(long seed) {
+    private static boolean validateAsAttempt(String attempt, Set<String> words) {
+        return words.contains(attempt);
+    }
+
+    private static String selectAnswer(long seed, Set<String> words) {
         List<String> wordList = new ArrayList<>(words);
-        answer = wordList.get(new Random(seed).nextInt(wordList.size()));
+        return wordList.get(new Random(seed).nextInt(wordList.size()));
     }
 
     private static String sanitizeWord(String word) {
@@ -120,7 +145,7 @@ public class Main {
 
         ProgressBar bar = new ProgressBar.Builder()
             .label("Fetching dictionary:")
-            .width(50)
+            .width(20)
             .hasBorders(false)
             .totalValue(inputStream.available())
             .out(out)
@@ -137,7 +162,7 @@ public class Main {
             if (cleanWord.isBlank() || !cleanWord.matches("[A-Z]+") || cleanWord.length() != chosenWordLength) continue;
             dictionary.add(cleanWord);
         }
-        try { Thread.sleep(1000);
+        try { Thread.sleep(0);
         } catch (InterruptedException e) { e.printStackTrace(); }
         clearOutputStream(out);
         return dictionary;

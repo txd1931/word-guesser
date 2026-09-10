@@ -94,7 +94,6 @@ public class ProgressBar {
             bar.append(" " + percentageText + "%");
         }
         bar.append("\n");
-        //out.print("\033[u");
         out.print(bar);
     }
 
