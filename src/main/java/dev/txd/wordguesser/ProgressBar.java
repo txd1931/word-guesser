@@ -113,11 +113,7 @@ public class ProgressBar {
         private int column = 0;
         private int totalValue = 100;
         private Runnable onComplete = null;
-
-        public Builder() {
-
-        }
-
+        
         public Builder out(PrintStream out) {
             this.out = out;
             return this;
